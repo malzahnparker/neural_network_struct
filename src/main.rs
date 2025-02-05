@@ -29,16 +29,15 @@ impl NeuralNetworkLayer {
         }
 
     }
-    fn forward(&self, inputs: &[f32]) -> Vec<f32> {    
+    fn forward(&mut self, inputs: &[f32]) {    
         for i in 0..self.num_outputs {
             self.outputs[i] = 0.0;
             for j in 0..self.num_inputs {
                 self.outputs[i] += inputs[j] * self.weights[j][i];
             }
             self.outputs[i] += self.biases[i];
-            self.outputs[i] = sigmoid(self.outputs[i]);
+            self.outputs[i] = self.sigmoid(self.outputs[i]);
         }
-        return self.outputs;
     }
     /*fn backwards(previous_errors: Vec<f32>) {
         let mut hidden_errors = vec![0.0; HIDDEN_SIZE];
@@ -49,13 +48,20 @@ impl NeuralNetworkLayer {
             hidden_errors[j] *= sigmoid_derivative(self.hidden_layer[j]);
         }
     }*/
+    fn sigmoid(&self, x: f32) -> f32 {
+        1.0 / (1.0 + (-x).exp())
+    }
+    
+    fn sigmoid_derivative(&self, x: f32) -> f32 {
+        self.sigmoid(x) * (self.sigmoid(x) - 1.0)
+    }
 }
 
 
 fn main() {
-    let dense1 = NeuralNetworkLayer::new(8, 16);
-    let dense2 = NeuralNetworkLayer::new(16, 16);
-    let dense3 = NeuralNetworkLayer::new(16, 2);
+    let mut dense1 = NeuralNetworkLayer::new(8, 16);
+    let mut dense2 = NeuralNetworkLayer::new(16, 16);
+    let mut dense3 = NeuralNetworkLayer::new(16, 2);
     let inputs = vec![0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0];
     dense1.forward(&inputs);
     dense2.forward(&dense1.outputs);

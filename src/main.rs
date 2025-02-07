@@ -29,14 +29,14 @@ impl NeuralNetworkLayer {
             biases: biases,
             num_inputs: num_inputs,
             num_outputs: num_outputs,
-            inputs: vec![0.0; num_inputs]
+            inputs: vec![0.0; num_inputs],
             outputs: vec![0.0; num_outputs],
-            errors: vec![o.0; num_outputs]
+            errors: vec![0.0; num_outputs]
         }
 
     }
     fn forward(&mut self, inputs: &[f32]) {    
-        self.inputs = inputs.clone();
+        self.inputs = inputs.clone().to_vec();
         for i in 0..self.num_outputs {
             self.outputs[i] = 0.0;
             for j in 0..self.num_inputs {
@@ -46,14 +46,18 @@ impl NeuralNetworkLayer {
             self.outputs[i] = self.sigmoid(self.outputs[i]);
         }
     }
-    fn backwards(&mut self, previous_errors: Vec<f32>, num_previous: usize) {
-        let mut self.errors = vec![0.0; self.num_outputs];
-        for j in 0..num_previous {
-            for k in 0..num_previous {
-                self.errors[j] += previous_errors[k] * self.weights[j][k];
+    fn backwards(&mut self, previous_errors: &Vec<f32>, previous_weights: &Vec<Vec<f32>>, first: bool) {
+        if first {
+            self.errors = previous_errors.clone();
+        } else {
+        self.errors = vec![0.0; self.num_outputs];
+        for j in 0..self.num_outputs {
+            for k in 0..previous_errors.len() {
+                self.errors[j] += previous_errors[k] * previous_weights[j][k];
             }
-            self.errors[j] *= sigmoid_derivative(self.outputs[j]);
+            self.errors[j] *= self.sigmoid_derivative(self.outputs[j]);
         }
+    }
         for j in 0..self.num_outputs {
             for i in 0..self.num_inputs {
                 self.weights[i][j] += LEARNING_RATE * self.errors[j] * self.inputs[i];
@@ -76,10 +80,16 @@ fn main() {
     let mut dense2 = NeuralNetworkLayer::new(16, 16);
     let mut dense3 = NeuralNetworkLayer::new(16, 2);
     let inputs = vec![0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0];
+    let errors = vec![1.0 - dense3.outputs[0], 0.5 - dense3.outputs[1]];
+    let null = vec![vec![0.0]];
+    for i in 0..100000 {
     dense1.forward(&inputs);
     dense2.forward(&dense1.outputs);
     dense3.forward(&dense2.outputs);
-    dbg!(dense3.outputs);
-    let errors = vec![1.0 - dense1.outputs[0], ];
-    dense3.backwards(vec![1.0 - dense1.outputs])
+    println!{"x: {}, y: {}", dense3.outputs[0], dense3.outputs[1]};
+    dense3.backwards(&errors, &null, true);
+    dense2.backwards(&dense3.errors, &dense3.weights, false);
+    dense1.backwards(&dense2.errors, &dense2.weights, false);
+    }
+
 }
